@@ -1,3 +1,5 @@
+![Revenue Image](images/revenue-per-lead.jpg)
+
 # Revenue Report
 A simple python script to ingest monthly revenue CSVs with different formats, parse contents, and yield a combined revenue summary.
 
@@ -95,6 +97,42 @@ Following these tests, the current row's year, month, and revenue are stored as 
 Overall, this loop serves to check if the current row is unique (in which case it is added to `finalarray`), or from the same time period as the previous row (in which case its revenue is added to the previous row's revenue and used to overwrite the previous row). Said simply, it adds together duplicate year/month pairs.
 
 ### Financial Analysis
-Now that the data has been cleaned, the analysis can be produced.
+Now that the data has been cleaned and aggregated, the analysis can be produced.
 
-#### 
+#### Calculating Greatest Monthly Increase and Decrease in Revenue
+Lines 141-166 contain a for loop which determines the following:
+* Total number of months covered by the combined reports
+* Total revenue in all months
+* Average revenue change, month-to-month
+* Greatest monthly increase in revenue, including the month and year
+* Greatest monthly decrease in revenue, including the month and year
+
+This is accomplished by iterating over `finalarray`, each time:
+* Adding the element's revenue to the running total, `revenue`
+* Subtracting the previous month's revenue, `lastrev` (initialized as 0), from the current element's revenue, and adding this to the running monthly change total, `chgtot`
+* Subtracting the previous month's revenue, `lastrev`, from the current element's revenue to give monthly change, and testing if this monthly change is larger than the stored greatest monthly increase, `topdog` (initialized as 0)
+    * If true, this monthly change is stored as the new `topdog`, and the year and month of the current element are stored as `topmonth` and `topyear`, respectively.
+* Subtracting the previous month's revenue, `lastrev`, from the current element's revenue to give monthly change, and testing if this monthly change is smaller than the stored greatest monthly decrease, `underdog` (initialized as 1000000000, a number larger than any monthly change in the dataset- this ensures that the first pass through the loop will be stored and compared against subsequent elements)
+    * If true, this monthly change is stored as the new `underdog`, and the year and month of the current element are stored as `undermonth` and `underyear`, respectively.
+* Testing if this is the first time through the loop (`firsttime == 0`)
+    * If true: 
+        * The element's month is stored as `month`
+        * `monthcount` is set to 1 (was originally initialized as 0)
+        * `firsttime` is set to 1 (to ensure this part of the loop is only entered once)
+    * If false:
+        * The current element's month is tested to see if it is identical to the stored `month` from the first pass through the loop
+            * If false:
+                * `monthcount` is incremented by one to keep track of how many months have been iterated through. This will be used to calculate average monthly revenue change.
+                * The current element's month is stored as `month`
+                * This part of the loop simply safeguards two consecutive identical months from both incrementing the month counter (unneccessary, as above steps cleaned the data of this possibility)
+* Finally, storing the current element's revenue as the new `lastrev` for monthly change calculation next time through the loop
+
+#### Printing Results to Console
+Lines 168-174 calculate and print the results of the financial analysis to the console. One calculation to note is the average revenue change, on line 172, which divides the total monthly changes by the number of months counted. 1 month is subtracted from the count, as there is no change recorded for the first month.
+
+### Writing Report to .txt File
+In order to write the results of the financial analysis to a file for records, an output filepath is constructed using `os` module's `path.join()` function to ensure the correct directory seperator is used.
+
+Lines 178-191 use the `open()` function to create a file object, and write to it using `.write()`. Newlines are written in between lines to make the file more readable.
+
+The output .txt file can be viewed in the repo in the output_analysis folder.
